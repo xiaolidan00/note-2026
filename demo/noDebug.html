@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>页面防护示例</title>
+
+    <script src="
+https://cdn.jsdelivr.net/npm/devtools-detector@2.0.25/lib/devtools-detector.min.js
+"></script>
+    <style>
+        body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>受保护的内容区域</h1>
+    <p>这段文字禁止复制、右键和拖拽。</p>
+
+    <script type="module">
+
+
+        function showWarningOverlay() {
+            if (document.getElementById('__security_overlay')) return;
+            const overlay = document.createElement('div');
+            overlay.id = '__security_overlay';
+            overlay.style.cssText = `
+            position:fixed; inset:0; z-index:2147483647;
+            background:rgba(0,0,0,0.95); color:#ff4444;
+            display:flex; align-items:center; justify-content:center;
+            font-size:24px; font-family:sans-serif; text-align:center;
+            pointer-events:all;
+        `;
+            overlay.innerHTML = '⚠️ 检测到开发者工具<br>请关闭后刷新页面';
+            // 【修复】兼容body尚未解析完成的情况
+            if (document.body) {
+                document.body.appendChild(overlay);
+            } else {
+                document.addEventListener('DOMContentLoaded', function () {
+                    document.body.appendChild(overlay);
+                });
+            }
+        }
+
+        // 1. Add listener
+        devtoolsDetector.addListener((isOpen) => {
+            if (isOpen) {
+                console.error('[安全警告] 检测到开发者工具已打开！');
+                showWarningOverlay();
+            } else {
+                const overlay = document.getElementById('__security_overlay')
+                if (overlay)
+                    document.body.removeChild(overlay)
+            }
+        });
+
+        // 2. Launch detection
+        devtoolsDetector.launch();
+
+
+        // =====================
+        // 一、禁止复制相关操作 (保持不变)
+        // =====================
+        // 禁止右键菜单
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // 禁止复制/剪切
+        document.addEventListener('copy', e => e.preventDefault());
+        document.addEventListener('cut', e => e.preventDefault());
+
+        // 禁止粘贴（可选）
+        document.addEventListener('paste', e => e.preventDefault());
+
+        // 禁止拖拽选中
+        document.addEventListener('dragstart', e => e.preventDefault());
+        //禁止选择
+        document.addEventListener('selectstart', e => e.preventDefault());
+        //禁止快捷键
+        document.addEventListener('keydown', (e) => {
+            const blocked = [
+                e.ctrlKey && ['c', 'a', 's', 'u', 'p', 'j', 'i', 'k', 'f'].includes(e.key.toLowerCase()),
+                e.keyCode === 123,
+                e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase()),
+            ];
+            if (blocked.some(Boolean)) e.preventDefault();
+        });
+
+    </script>
+</body>
+
+</html>
